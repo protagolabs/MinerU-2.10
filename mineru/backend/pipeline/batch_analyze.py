@@ -16,12 +16,17 @@ OCR_DET_BASE_BATCH_SIZE = 16
 
 
 class BatchAnalyze:
-    def __init__(self, model_manager, batch_ratio: int, formula_enable, table_enable, enable_ocr_det_batch: bool = True):
+    def __init__(
+            self, model_manager, batch_ratio: int, formula_enable,
+            table_enable, enable_ocr_det_batch: bool = True,
+            layout_only: bool = False
+    ):
         self.batch_ratio = batch_ratio
         self.formula_enable = get_formula_enable(formula_enable)
         self.table_enable = get_table_enable(table_enable)
         self.model_manager = model_manager
         self.enable_ocr_det_batch = enable_ocr_det_batch
+        self.layout_only = layout_only
 
     def __call__(self, images_with_extra_info: list) -> list:
         if len(images_with_extra_info) == 0:
@@ -47,6 +52,10 @@ class BatchAnalyze:
         images_layout_res += self.model.layout_model.batch_predict(
             layout_images, YOLO_LAYOUT_BASE_BATCH_SIZE
         )
+
+        if self.layout_only:
+            logger.info("Layout only mode enabled, skipping formula and table detection.")
+            return images_layout_res
 
         if self.formula_enable:
             # 公式检测
